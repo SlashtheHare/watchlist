@@ -1184,6 +1184,26 @@ footer p { font-size: 11px; color: var(--ink-dim); letter-spacing: .05em; text-t
     };
   }
   const spheres = Array.from({length: 7}, makeSphere);
+
+  /* Extra spheres in the top & middle — identical glass style, no fish */
+  const upperSpheres = Array.from({length: 10}, (_, i) => {
+    const zone = Math.random();
+    return {
+      x: 0.05 + Math.random() * 0.85,
+      y: zone < 0.5
+        ? Math.random() * 0.35
+        : 0.35 + Math.random() * 0.30,
+      r: 45 + Math.random() * 90,
+      speed: 0.00003 + Math.random() * 0.00006,
+      wobble: Math.random() * Math.PI * 2,
+      wobbleSpeed: 0.004 + Math.random() * 0.007,
+      opacity: 0.55 + Math.random() * 0.30,
+      innerFish: null,
+      fishX: 0.5,
+      fishDir: 1,
+      fishAnim: Math.random() * Math.PI * 2,
+    };
+  });
   window._aeroSpheres = spheres;
 
   /* ════════════════════════════
@@ -1497,11 +1517,23 @@ footer p { font-size: 11px; color: var(--ink-dim); letter-spacing: .05em; text-t
       ctx.fill();
     });
 
-    // Glass spheres
+    // Glass spheres (rise from bottom)
     spheres.forEach(sp => {
       sp.y -= sp.speed;
       sp.wobble += sp.wobbleSpeed;
       if (sp.y < -0.3) Object.assign(sp, makeSphere(), {y: 1.1 + Math.random()*0.2});
+      drawSphere(sp);
+    });
+
+    // Upper glass spheres (top & middle zone — loop back into their zone)
+    upperSpheres.forEach(sp => {
+      sp.y -= sp.speed;
+      sp.wobble += sp.wobbleSpeed;
+      if (sp.y < -0.3) {
+        const zone = Math.random();
+        sp.y = zone < 0.5 ? 0.35 + Math.random() * 0.05 : 0.65 + Math.random() * 0.05;
+        sp.x = 0.05 + Math.random() * 0.85;
+      }
       drawSphere(sp);
     });
 
@@ -7178,7 +7210,7 @@ const LOCAL_BOOK_COVERS = {
   "ambergris": "covers/books/ambergris.webp",
   "americanpsycho": "covers/books/american-psycho.webp",
   "animalmoney": "covers/books/animal-money.webp",
-  "dracula": "covers/books/dracula.jpg",
+  "dracula": "covers/books/dracula.webp",
   "dune": "covers/books/dune.webp",
   "experimentalfilm": "covers/books/experimental-film.webp",
   "finneganswake": "covers/books/finnegans-wake.webp",
@@ -7196,8 +7228,8 @@ const LOCAL_BOOK_COVERS = {
   "piranesi": "covers/books/piranesi.webp",
   "s": "covers/books/s.webp",
   "somethingwickedthiswaycomes": "covers/books/something-wicked-this-way-comes.webp",
-  "southernreachabsolution4": "covers/books/southern-reach--absolution--4.jpg",
-  "southernreachtrilogy13": "covers/books/southern-reach-trilogy--1-3.jpg",
+  "southernreachabsolution4": "covers/books/southern-reach--absolution--4.webp",
+  "southernreachtrilogy13": "covers/books/southern-reach-trilogy--1-3.webp",
   "strangehouses": "covers/books/strange-houses.webp",
   "strangerthingshappen": "covers/books/stranger-things-happen.webp",
   "sweeneytoddthestringofpearls": "covers/books/sweeney-todd-the-string-of-pearls.webp",
@@ -7208,11 +7240,11 @@ const LOCAL_BOOK_COVERS = {
   "thecroning": "covers/books/the-croning.webp",
   "thedivinecomedy": "covers/books/the-divine-comedy.webp",
   "theessentialkafka": "covers/books/the-essential-kafka.webp",
-  "thefamiliarvol1": "covers/books/the-familiar-vol--1.jpg",
-  "thefamiliarvol2": "covers/books/the-familiar-vol--2.jpg",
-  "thefamiliarvol3": "covers/books/the-familiar-vol--3.jpg",
-  "thefamiliarvol4": "covers/books/the-familiar-vol--4.jpg",
-  "thefamiliarvol5": "covers/books/the-familiar-vol--5.jpg",
+  "thefamiliarvol1": "covers/books/the-familiar-vol--1.webp",
+  "thefamiliarvol2": "covers/books/the-familiar-vol--2.webp",
+  "thefamiliarvol3": "covers/books/the-familiar-vol--3.webp",
+  "thefamiliarvol4": "covers/books/the-familiar-vol--4.webp",
+  "thefamiliarvol5": "covers/books/the-familiar-vol--5.webp",
   "thehauntingofhillhouse": "covers/books/the-haunting-of-hill-house.webp",
   "thehouseontheborderland": "covers/books/the-house-on-the-borderland.webp",
   "theimagosequenceandotherstories": "covers/books/the-imago-sequence-and-other-stories.webp",
@@ -7227,7 +7259,7 @@ const LOCAL_BOOK_COVERS = {
   "trainspotting": "covers/books/trainspotting.webp",
   "ubik": "covers/books/ubik.webp",
   "viriconium": "covers/books/viriconium.webp",
-  "wehavealwayslivedinthecastle": "covers/books/we-have-always-lived-in-the-castle.webp"
+  "wehavealwayslivedinthecastle": "covers/books/we-have-always-lived-in-the-castle.webp",
 };
 
 /* Hardcoded game cover overrides for titles IGDB struggles with */
@@ -7572,18 +7604,16 @@ async function tryIGDB(title) {
    the search step and only use this when an ID is known. Kept for injectGamePoster
    onerror chaining (library_600x900 → header.jpg). */
 
+/* trySteam — stub */
+async function trySteam(title) { return null; }
+
 async function fetchGameCover(title, index = 0) {
-  await sleep(index * 150);
   const key = normalise(title);
-  /* Check local covers first — no network needed */
-  if (LOCAL_GAME_COVERS[key]) { injectGamePoster(slug(title), LOCAL_GAME_COVERS[key]); return; }
+  /* Check local covers first — instant, no delay, evict any stale cache */
+  if (LOCAL_GAME_COVERS[key]) { delete gamePosterCache[key]; injectGamePoster(slug(title), LOCAL_GAME_COVERS[key]); return; }
+  await sleep(index * 150);
 
-  if (key in gamePosterCache) {
-    if (gamePosterCache[key]) injectGamePoster(slug(title), gamePosterCache[key]);
-    return;
-  }
-
-  /* Check hardcoded overrides first */
+  /* Check hardcoded overrides first — before cache */
   if (Object.prototype.hasOwnProperty.call(GAME_COVER_OVERRIDES, key)) {
     const url = GAME_COVER_OVERRIDES[key];
     if (url) {
@@ -7592,9 +7622,11 @@ async function fetchGameCover(title, index = 0) {
       injectGamePoster(slug(title), url);
       return;
     }
-    /* null override = IGDB won't find this; skip straight to Steam */
   } else {
-    /* Try IGDB with multiple query variants */
+    if (key in gamePosterCache) {
+      if (gamePosterCache[key]) injectGamePoster(slug(title), gamePosterCache[key]);
+      return;
+    }
     const igdbCover = await tryIGDB(title);
     if (igdbCover) {
       gamePosterCache[key] = igdbCover;
@@ -7657,41 +7689,14 @@ function saveBookPosterCache() {
 }
 
 /* Hardcoded covers for books that search poorly */
-const BOOK_COVER_OVERRIDES = {
-  // B&N Lovecraft — hardcoded OL edition
-  'hplovecraftbncollection': 'covers/books/h-p--lovecraft---b-n-collection.jpg',
-  // "S." — single letter breaks OL search
-  's': 'covers/books/s.png',
-  // Hardcoded by ISBN — OL/Google Books kept returning wrong or no covers
-  'dracula': 'covers/books/dracula.jpg',
-  'piranesi': 'covers/books/piranesi.jpg',
-  'infinitejest20thanniversary': 'covers/books/infinite-jest--20th-anniversary.png',
-  'strangehouses': 'covers/books/strange-houses.jpg',
-  'theessentialkafka': 'covers/books/the-essential-kafka.jpg',
-  'theplighthouse': 'covers/books/the-plight-house.jpg',
-  'animalmoney': 'covers/books/animal-money.jpg',
-  'viriconium': 'covers/books/viriconium.jpg',
-  'thenarrator': 'covers/books/the-narrator.jpg',
-  'thecompletetalesandpoems': 'covers/books/the-complete-tales-and-poems.jpg',
-  'theweirdtalesofwilliamhopehodgson': 'covers/books/the-weird-tales-of-william-hope-hodgson.jpg',
-  'outofthedeepothersupernaturaltales': 'covers/books/out-of-the-deep---other-supernatural-tales.jpg',
-  'southernreachabsolution4': 'covers/books/southern-reach--absolution--4.jpg',
-  // The Familiar series — per-volume ISBNs (Random House hardcovers)
-  'thefamiliarvol1': 'covers/books/the-familiar-vol--1.jpg',
-  'thefamiliarvol2': 'covers/books/the-familiar-vol--2.jpg',
-  'thefamiliarvol3': 'covers/books/the-familiar-vol--3.jpg',
-  'thefamiliarvol4': 'covers/books/the-familiar-vol--4.jpg',
-  'thefamiliarvol5': 'covers/books/the-familiar-vol--5.jpg',
-};
-
+const BOOK_COVER_OVERRIDES = {};
 async function fetchBookCover(title, author, index = 0) {
-  await sleep(index * 120);
   const key = normalise(title);
-  /* Check local covers first */
-  if (LOCAL_BOOK_COVERS[key]) { injectBookPoster(slug(title), LOCAL_BOOK_COVERS[key]); return; }
-  if (bookPosterCache[key]) { injectBookPoster(slug(title), bookPosterCache[key]); return; }
+  /* Check local covers first — instant, no delay, evict any stale cache */
+  if (LOCAL_BOOK_COVERS[key]) { delete bookPosterCache[key]; injectBookPoster(slug(title), LOCAL_BOOK_COVERS[key]); return; }
+  await sleep(index * 120);
 
-  /* Check hardcoded overrides first */
+  /* Check hardcoded overrides first — before cache */
   if (Object.prototype.hasOwnProperty.call(BOOK_COVER_OVERRIDES, key)) {
     const overrideUrl = BOOK_COVER_OVERRIDES[key];
     if (overrideUrl) {
@@ -7702,6 +7707,7 @@ async function fetchBookCover(title, author, index = 0) {
     }
     /* null override = skip Open Library, go straight to Google Books */
   } else {
+    if (bookPosterCache[key]) { injectBookPoster(slug(title), bookPosterCache[key]); return; }
     /* Try Open Library — strip edition suffixes first for better matching */
     try {
       const cleanTitle = title
@@ -7865,6 +7871,12 @@ async function init() {
     fetchMoviePoster(m.title, m.year, i);
   });
 
+
+  /* Purge stale cache entries for anything now served locally */
+  Object.keys(LOCAL_BOOK_COVERS).forEach(k => delete bookPosterCache[k]);
+  Object.keys(LOCAL_GAME_COVERS).forEach(k => delete gamePosterCache[k]);
+  saveBookPosterCache();
+  saveGamePosterCache();
   /* Fetch book covers on load (books are rendered) */
   fetchAllBookCovers();
   /* Game covers fetched on-demand when games tab is opened */
