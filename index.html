@@ -5900,7 +5900,7 @@ const LOCAL_GAME_COVERS = {
   "deadrising4": "covers/games/dead-rising-4.webp",
   "deadspace": "covers/games/dead-space.webp",
   "deadspace2": "covers/games/dead-space-2.webp",
-  "deadspace2008": "covers/games/dead-space--2008.jpg",
+  "deadspace2008": "covers/games/dead-space--2008.webp",
   "deadspace3": "covers/games/dead-space-3.webp",
   "deadtake": "covers/games/dead-take.webp",
   "dealerslife2": "covers/games/dealers-life-2.webp",
@@ -6230,7 +6230,7 @@ const LOCAL_GAME_COVERS = {
   "insink": "covers/games/in-sink.webp",
   "invisiblewar": "covers/games/invisible-war.webp",
   "irmaograndebrasileiro2": "covers/games/irmao-grande-brasileiro-2.webp",
-  "irmograndebrasileiro2": "covers/games/irm-o-grande---brasileiro-2.jpg",
+  "irmograndebrasileiro2": "covers/games/irm-o-grande---brasileiro-2.webp",
   "isawblackclouds": "covers/games/i-saw-black-clouds.webp",
   "isthisseattaken": "covers/games/is-this-seat-taken.webp",
   "ittakestwo": "covers/games/it-takes-two.webp",
@@ -6470,7 +6470,7 @@ const LOCAL_GAME_COVERS = {
   "obliviongameoftheyearedition": "covers/games/oblivion-game-of-the-year-edition.webp",
   "obscure": "covers/games/obscure.webp",
   "obscuretheaftermath": "covers/games/obscure-the-aftermath.webp",
-  "obsidian": "covers/games/obsidian.jpg",
+  "obsidian": "covers/games/obsidian.webp",
   "occlude": "covers/games/occlude.webp",
   "oddcore": "covers/games/oddcore.webp",
   "offpeak": "covers/games/off-peak.webp",
@@ -6719,7 +6719,7 @@ const LOCAL_GAME_COVERS = {
   "scarlethollow": "covers/games/scarlet-hollow.webp",
   "scarsabove": "covers/games/scars-above.webp",
   "sceneinvestigators": "covers/games/scene-investigators.webp",
-  "schrdingerscall": "covers/games/schr-dinger--s-call.jpg",
+  "schrdingerscall": "covers/games/schr-dinger--s-call.webp",
   "schrodingerscall": "covers/games/schrodingers-call.webp",
   "scorn": "covers/games/scorn.webp",
   "scpvalravn": "covers/games/scp-valravn.webp",
@@ -7531,6 +7531,9 @@ async function tryIGDB(title) {
    the search step and only use this when an ID is known. Kept for injectGamePoster
    onerror chaining (library_600x900 → header.jpg). */
 
+/* trySteam — stub (Steam search is not CORS-accessible from browser) */
+async function trySteam(title) { return null; }
+
 async function fetchGameCover(title, index = 0) {
   await sleep(index * 150);
   const key = normalise(title);
@@ -7616,18 +7619,8 @@ function saveBookPosterCache() {
 
 /* Hardcoded covers for books that search poorly */
 const BOOK_COVER_OVERRIDES = {
-  // B&N Lovecraft — hardcoded OL edition
-  // "S." — single letter breaks OL search
-  // Hardcoded by ISBN — OL/Google Books kept returning wrong or no covers
-  'southernreachabsolution4': 'covers/books/southern-reach--absolution--4.jpg',
-  // The Familiar series — per-volume ISBNs (Random House hardcovers)
-  'thefamiliarvol1': 'covers/books/the-familiar-vol--1.jpg',
-  'thefamiliarvol2': 'covers/books/the-familiar-vol--2.jpg',
-  'thefamiliarvol3': 'covers/books/the-familiar-vol--3.jpg',
-  'thefamiliarvol4': 'covers/books/the-familiar-vol--4.jpg',
-  'thefamiliarvol5': 'covers/books/the-familiar-vol--5.jpg',
+  // All local covers are now handled by LOCAL_BOOK_COVERS
 };
-
 async function fetchBookCover(title, author, index = 0) {
   await sleep(index * 120);
   const key = normalise(title);
