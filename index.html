@@ -7531,14 +7531,14 @@ async function tryIGDB(title) {
    the search step and only use this when an ID is known. Kept for injectGamePoster
    onerror chaining (library_600x900 → header.jpg). */
 
-/* trySteam — stub (Steam search not CORS-accessible) */
+/* trySteam — stub */
 async function trySteam(title) { return null; }
 
 async function fetchGameCover(title, index = 0) {
-  await sleep(index * 150);
   const key = normalise(title);
-  /* Check local covers first — no network needed */
-  if (LOCAL_GAME_COVERS[key]) { delete gamePosterCache[key]; injectGamePoster(slug(title), LOCAL_GAME_COVERS[key]); return; }
+  /* Check local covers first — instant, no delay, never cached */
+  if (LOCAL_GAME_COVERS[key]) { injectGamePoster(slug(title), LOCAL_GAME_COVERS[key]); return; }
+  await sleep(index * 150);
 
   /* Check hardcoded overrides first — before cache */
   if (Object.prototype.hasOwnProperty.call(GAME_COVER_OVERRIDES, key)) {
@@ -7617,10 +7617,10 @@ function saveBookPosterCache() {
 /* Hardcoded covers for books that search poorly */
 const BOOK_COVER_OVERRIDES = {};
 async function fetchBookCover(title, author, index = 0) {
-  await sleep(index * 120);
   const key = normalise(title);
-  /* Check local covers first */
-  if (LOCAL_BOOK_COVERS[key]) { delete bookPosterCache[key]; injectBookPoster(slug(title), LOCAL_BOOK_COVERS[key]); return; }
+  /* Check local covers first — instant, no delay, never cached */
+  if (LOCAL_BOOK_COVERS[key]) { injectBookPoster(slug(title), LOCAL_BOOK_COVERS[key]); return; }
+  await sleep(index * 120);
   /* Check hardcoded overrides first — before cache */
   if (Object.prototype.hasOwnProperty.call(BOOK_COVER_OVERRIDES, key)) {
     const overrideUrl = BOOK_COVER_OVERRIDES[key];
@@ -7795,6 +7795,13 @@ async function init() {
     fetchMoviePoster(m.title, m.year, i);
   });
 
+
+  /* Purge stale cache entries for anything now served locally — runs on every
+     load so old .jpg/.png URLs can never persist across sessions. */
+  Object.keys(LOCAL_BOOK_COVERS).forEach(k => delete bookPosterCache[k]);
+  Object.keys(LOCAL_GAME_COVERS).forEach(k => delete gamePosterCache[k]);
+  saveBookPosterCache();
+  saveGamePosterCache();
   /* Fetch book covers on load (books are rendered) */
   fetchAllBookCovers();
   /* Game covers fetched on-demand when games tab is opened */
