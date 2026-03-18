@@ -1,0 +1,4 @@
+[game] Necesse
+[game] Obsidian
+[book] Dracula
+[book] Southern Reach Trilogy (1–3)

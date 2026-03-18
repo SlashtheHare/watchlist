@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MAL SETUP // SLASHTHEHARE</title>
+<link href="https://fonts.googleapis.com/css2?family=Special+Elite&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --red: #cc1111;
+    --red-dim: #5a0000;
+    --paper: #0e0b0b;
+    --surface: #150f0f;
+    --surface2: #1c1414;
+    --ink: #d4c8c0;
+    --ink-dim: #7a6e69;
+    --ink-faint: #3a3030;
+    --border: #2e2020;
+    --green: #1a5c3a;
+    --green-bright: #2a9a60;
+    --amber-bright: #ccb800;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--paper); color: var(--ink); font-family: 'Courier Prime', monospace; font-size: 14px; line-height: 1.6; min-height: 100vh; }
+  .page { max-width: 680px; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
+  .site-tag { font-family: 'Special Elite', serif; font-size: 10px; letter-spacing: .2em; color: var(--red); text-transform: uppercase; margin-bottom: .4rem; }
+  h1 { font-family: 'Special Elite', serif; font-size: 2.2rem; color: var(--ink); line-height: 1.1; margin-bottom: .25rem; }
+  h1 span { color: var(--red); }
+  .subtitle { font-size: 11px; color: var(--ink-dim); letter-spacing: .06em; text-transform: uppercase; margin-bottom: 2rem; }
+  .rule { height: 1px; background: var(--red-dim); margin: 1.5rem 0; }
+
+  .step { border: 1px solid var(--border); background: var(--surface); padding: 1.25rem 1.5rem; margin-bottom: 1rem; }
+  .step.active { border-color: var(--red); }
+  .step.done   { border-color: var(--green); }
+  .step.locked { opacity: .4; pointer-events: none; }
+
+  .step-header { display: flex; align-items: center; gap: 12px; margin-bottom: .75rem; }
+  .step-num { font-family: 'Special Elite', serif; font-size: 11px; letter-spacing: .12em; color: var(--ink-faint); text-transform: uppercase; border: 1px solid var(--ink-faint); padding: 2px 8px; flex-shrink: 0; }
+  .step.active .step-num { border-color: var(--red); color: var(--red); }
+  .step.done   .step-num { border-color: var(--green-bright); color: var(--green-bright); }
+  .step-title { font-family: 'Special Elite', serif; font-size: 15px; color: var(--ink); }
+  .step-body { font-size: 12px; color: var(--ink-dim); line-height: 1.7; }
+
+  .btn { font-family: 'Special Elite', serif; font-size: 12px; letter-spacing: .1em; text-transform: uppercase; background: transparent; border: 1px solid var(--red); color: var(--red); padding: 8px 20px; cursor: pointer; transition: all .15s; margin-top: .75rem; display: inline-block; }
+  .btn:hover { background: var(--red); color: var(--ink); }
+  .btn:disabled { opacity: .4; pointer-events: none; }
+
+  .status { font-size: 12px; color: var(--amber-bright); margin-top: .6rem; letter-spacing: .04em; }
+  .status.ok  { color: var(--green-bright); }
+  .status.err { color: var(--red); }
+
+  .copy-box { font-family: 'Courier Prime', monospace; font-size: 12px; background: var(--paper); border: 1px solid var(--border); color: var(--green-bright); padding: 12px 14px; margin-top: .75rem; word-break: break-all; line-height: 1.8; display: none; }
+  .copy-box.visible { display: block; }
+
+  .btn.green { border-color: var(--green-bright); color: var(--green-bright); }
+  .btn.green:hover { background: var(--green); color: var(--ink); }
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="site-tag">slashthehare // mal oauth setup</div>
+  <h1>MAL <span>SETUP</span></h1>
+  <p class="subtitle">One-time — connects your MAL account so completed anime auto-hide</p>
+  <div class="rule"></div>
+
+  <!-- STEP 1 -->
+  <div class="step active" id="step1">
+    <div class="step-header">
+      <span class="step-num">Step 01</span>
+      <span class="step-title">Connect to MyAnimeList</span>
+    </div>
+    <div class="step-body">
+      Click below to be redirected to MAL to approve access. You'll come straight back here.
+    </div>
+    <button class="btn" onclick="startAuth()">Connect to MAL</button>
+    <div class="status" id="s1"></div>
+  </div>
+
+  <!-- STEP 2 -->
+  <div class="step locked" id="step2">
+    <div class="step-header">
+      <span class="step-num">Step 02</span>
+      <span class="step-title">Exchanging Token</span>
+    </div>
+    <div class="step-body">Completing authentication — hang on a moment.</div>
+    <div class="status" id="s2"></div>
+  </div>
+
+  <!-- STEP 3 -->
+  <div class="step locked" id="step3">
+    <div class="step-header">
+      <span class="step-num">Step 03</span>
+      <span class="step-title">Done — Token Saved</span>
+    </div>
+    <div class="step-body">
+      Your MAL access token is saved in your browser's localStorage. Your watchlist page will
+      now automatically hide anime you've marked as completed on MAL.<br><br>
+      The token lasts 31 days. When it expires, just visit this page again to re-authenticate.
+      You can delete this file from your repo after setup if you prefer — just keep the Client ID
+      in <code>index.html</code> to re-auth later.
+    </div>
+    <div class="copy-box" id="token-out"></div>
+    <button class="btn green" onclick="goHome()" style="margin-top:.75rem">Go to Watchlist</button>
+  </div>
+</div>
+<script>
+const MAL_CLIENT_ID  = "faa326bcaa134d1ebb8a03413c211576";
+// Paste your deployed worker URL here after deploying mal-oauth-worker.js
+const WORKER_URL     = "https://mal.rudacpbaptista.workers.dev/";
+const REDIRECT_URI   = window.location.origin + window.location.pathname;
+
+/* ── PKCE helpers ── */
+function base64url(buffer) {
+  return btoa(String.fromCharCode(...new Uint8Array(buffer)))
+    .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+async function generatePKCE() {
+  const verifier  = base64url(crypto.getRandomValues(new Uint8Array(32)));
+  // plain method: challenge === verifier
+  return { verifier, challenge: verifier };
+}
+
+/* ── Step 1: kick off auth (PKCE + client secret in worker) ── */
+async function startAuth() {
+  document.querySelector('#step1 .btn').disabled = true;
+  document.getElementById('s1').textContent = 'Generating challenge…';
+
+  const { verifier, challenge } = await generatePKCE();
+  localStorage.setItem('mal_verifier', verifier);
+
+  const params = new URLSearchParams({
+    response_type:         'code',
+    client_id:             MAL_CLIENT_ID,
+    redirect_uri:          REDIRECT_URI,
+    code_challenge:        challenge,
+    code_challenge_method: 'plain',
+  });
+
+  document.getElementById('s1').textContent = 'Redirecting to MAL…';
+  window.location.href = `https://myanimelist.net/v1/oauth2/authorize?${params}`;
+}
+
+/* ── Step 2: handle return from MAL ── */
+async function handleCallback() {
+  const params = new URLSearchParams(window.location.search);
+  const code   = params.get('code');
+  const state  = params.get('state');
+  const saved  = localStorage.getItem('mal_state');
+
+  if (!code) return;
+  if (state && saved && state !== saved) {
+    document.getElementById('s2').textContent = 'State mismatch — possible CSRF. Please try again.';
+    document.getElementById('s2').className = 'status err';
+    return;
+  }
+  localStorage.removeItem('mal_state');
+
+  setStep(1, 'done');
+  setStep(2, 'active');
+  document.getElementById('s2').textContent = 'Exchanging code for token…';
+
+  /* Clean URL */
+  window.history.replaceState({}, '', window.location.pathname);
+
+  const verifier = localStorage.getItem('mal_verifier');
+  localStorage.removeItem('mal_verifier');
+
+  try {
+    const body = new URLSearchParams({
+      client_id:     MAL_CLIENT_ID,
+      grant_type:    'authorization_code',
+      code,
+      redirect_uri:  REDIRECT_URI,
+      code_verifier: verifier || '',
+    });
+
+    const res  = await fetch(WORKER_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body,
+    });
+
+    if (!res.ok) {
+      const err = await res.text();
+      throw new Error(err);
+    }
+
+    const json = await res.json();
+    const expiry = Date.now() + json.expires_in * 1000;
+
+    localStorage.setItem('mal_access_token',  json.access_token);
+    localStorage.setItem('mal_refresh_token', json.refresh_token);
+    localStorage.setItem('mal_token_expiry',  String(expiry));
+
+
+    setStep(2, 'done');
+    setStep(3, 'active');
+    document.getElementById('token-out').textContent =
+      `Auto-renewing MAL token active.\nNext refresh before: ${new Date(expiry).toLocaleDateString()}`;
+    document.getElementById('token-out').classList.add('visible');
+
+  } catch(e) {
+    document.getElementById('s2').textContent = 'Error: ' + e.message;
+    document.getElementById('s2').className = 'status err';
+
+    /* MAL's token endpoint sometimes blocks CORS — show manual fallback */
+    if (e.message.includes('Failed to fetch') || e.message.includes('NetworkError')) {
+      document.getElementById('s2').innerHTML =
+        `CORS blocked by MAL. <a href="mal-worker-setup.html" style="color:var(--red)">
+        Use the Cloudflare Worker fallback instead.</a>`;
+    }
+  }
+}
+
+function setStep(n, state) {
+  const el = document.getElementById('step' + n);
+  if (!el) return;
+  el.classList.remove('locked','active','done');
+  el.classList.add(state);
+}
+
+function goHome() {
+  window.location.href = 'index.html';
+}
+
+/* ── on load: check if returning from MAL ── */
+if (new URLSearchParams(window.location.search).has('code')) {
+  handleCallback();
+}
+</script>
+</body>
+</html>
