@@ -7531,14 +7531,14 @@ async function tryIGDB(title) {
    the search step and only use this when an ID is known. Kept for injectGamePoster
    onerror chaining (library_600x900 → header.jpg). */
 
-/* trySteam — stub (Steam search is not CORS-accessible from browser) */
+/* trySteam — stub (Steam search not CORS-accessible from browser) */
 async function trySteam(title) { return null; }
 
 async function fetchGameCover(title, index = 0) {
-  await sleep(index * 150);
   const key = normalise(title);
-  /* Check local covers first — no network needed */
+  /* Check local covers first — no network needed, no delay */
   if (LOCAL_GAME_COVERS[key]) { injectGamePoster(slug(title), LOCAL_GAME_COVERS[key]); return; }
+  await sleep(index * 150);
 
   /* Check hardcoded overrides first — before cache, so manual fixes always win */
   if (Object.prototype.hasOwnProperty.call(GAME_COVER_OVERRIDES, key)) {
@@ -7549,14 +7549,12 @@ async function fetchGameCover(title, index = 0) {
       injectGamePoster(slug(title), url);
       return;
     }
-    /* null override = IGDB won't find this; skip straight to Steam */
+    /* null override = skip IGDB, fall through to Steam */
   } else {
-    /* Not an override — check cache before hitting the network */
     if (key in gamePosterCache) {
       if (gamePosterCache[key]) injectGamePoster(slug(title), gamePosterCache[key]);
       return;
     }
-    /* Try IGDB with multiple query variants */
     const igdbCover = await tryIGDB(title);
     if (igdbCover) {
       gamePosterCache[key] = igdbCover;
@@ -7619,14 +7617,14 @@ function saveBookPosterCache() {
 
 /* Hardcoded covers for books that search poorly */
 const BOOK_COVER_OVERRIDES = {
-  // All local covers are now handled by LOCAL_BOOK_COVERS
+  // All local covers handled by LOCAL_BOOK_COVERS
 };
 async function fetchBookCover(title, author, index = 0) {
-  await sleep(index * 120);
   const key = normalise(title);
-  /* Check local covers first */
+  /* Check local covers first — no network needed, no delay */
   if (LOCAL_BOOK_COVERS[key]) { injectBookPoster(slug(title), LOCAL_BOOK_COVERS[key]); return; }
-  /* Check hardcoded overrides first — before cache, so manual fixes always win */
+  await sleep(index * 120);
+  /* Check hardcoded overrides first — before cache */
   if (Object.prototype.hasOwnProperty.call(BOOK_COVER_OVERRIDES, key)) {
     const overrideUrl = BOOK_COVER_OVERRIDES[key];
     if (overrideUrl) {
@@ -7637,7 +7635,6 @@ async function fetchBookCover(title, author, index = 0) {
     }
     /* null override = skip Open Library, go straight to Google Books */
   } else {
-    /* Not an override — check cache before hitting the network */
     if (bookPosterCache[key]) { injectBookPoster(slug(title), bookPosterCache[key]); return; }
     /* Try Open Library — strip edition suffixes first for better matching */
     try {
