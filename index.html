@@ -846,6 +846,23 @@ footer p { font-size: 11px; color: var(--ink-dim); letter-spacing: .05em; text-t
 ::-webkit-scrollbar-track { background: rgba(0,200,180,0.15); }
 ::-webkit-scrollbar-thumb { background: rgba(0,180,160,0.4); border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: rgba(0,180,160,0.65); }
+
+/* ── Edit-mode gate ── */
+body:not(.edit-unlocked) .complete-btn {
+  display: none !important;
+}
+#edit-lock-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  opacity: .55;
+  transition: opacity .2s, transform .2s;
+  padding: 0;
+  line-height: 1;
+}
+#edit-lock-btn:hover { opacity: 1; transform: scale(1.2); }
+#edit-lock-btn.unlocked { opacity: .85; filter: hue-rotate(120deg); }
 </style>
 </head>
 <body>
@@ -1106,7 +1123,7 @@ footer p { font-size: 11px; color: var(--ink-dim); letter-spacing: .05em; text-t
     <a href="https://slashthehare.com" target="_blank">↗ slashthehare.com</a>
     <p>updated 2026 // media log</p>
     <p>icons by <a href="https://www.tumblr.com/netrestore" target="_blank">↗ netrestore</a></p>
-
+    <button id="edit-lock-btn" title="Toggle edit mode">🔒</button>
   </footer>
 
 </div><!-- /page -->
@@ -1745,6 +1762,67 @@ const ICONS = {
   busy: "icons/busy.png",
   offline: "icons/offline.png",
 };
+
+/* ════════════════════════════════════════════
+   EDIT-MODE AUTH
+   ════════════════════════════════════════════ */
+const AUTH_WORKER_URL = "https://logauth.rudacpbaptista.workers.dev/";
+const LS_EDIT_TOKEN   = "slashthehare_edit_token";
+
+function isEditUnlocked() {
+  return localStorage.getItem(LS_EDIT_TOKEN) !== null;
+}
+
+function applyEditMode() {
+  if (isEditUnlocked()) {
+    document.body.classList.add("edit-unlocked");
+    const btn = document.getElementById("edit-lock-btn");
+    if (btn) { btn.textContent = "🔓"; btn.classList.add("unlocked"); btn.title = "Edit mode ON — click to lock"; }
+  } else {
+    document.body.classList.remove("edit-unlocked");
+    const btn = document.getElementById("edit-lock-btn");
+    if (btn) { btn.textContent = "🔒"; btn.classList.remove("unlocked"); btn.title = "Unlock edit mode"; }
+  }
+}
+
+async function unlockEditMode() {
+  const secret = prompt("Enter edit password:");
+  if (!secret) return;
+  try {
+    const res  = await fetch(AUTH_WORKER_URL, {
+      method: "POST",
+      headers: { "X-Edit-Secret": secret },
+    });
+    const json = await res.json();
+    if (json.ok && json.token) {
+      localStorage.setItem(LS_EDIT_TOKEN, json.token);
+      applyEditMode();
+      showToast("✓ Edit mode unlocked");
+    } else {
+      showToast("✗ Wrong password");
+    }
+  } catch (e) {
+    showToast("✗ Could not reach auth server");
+  }
+}
+
+function lockEditMode() {
+  localStorage.removeItem(LS_EDIT_TOKEN);
+  applyEditMode();
+  showToast("🔒 Edit mode locked");
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  applyEditMode();
+  const btn = document.getElementById("edit-lock-btn");
+  if (btn) {
+    btn.addEventListener("click", () => {
+      if (isEditUnlocked()) lockEditMode();
+      else unlockEditMode();
+    });
+  }
+});
+applyEditMode(); // immediate, before DOMContentLoaded
 
 
 /* populate header emoticons once ICONS is defined */
